@@ -27,6 +27,22 @@ jobs:
           grep -qi "</html>" index.html
           echo "Tests passed"
 
+
+         jobs:
+  test:
+    name: 1. Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate dashboard files
+        run: |
+          test -f index.html
+          grep -qi "<html" index.html
+          grep -qi "</html>" index.html
+          echo "Tests passed" 
+
   build:
     name: 2. Build artifact
     needs: test

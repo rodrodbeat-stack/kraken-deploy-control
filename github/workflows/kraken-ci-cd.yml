@@ -28,6 +28,19 @@ jobs:
           echo "Tests passed"
 
 
+build:
+    name: 2. Build artifact
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Prepare site artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: .
+
          jobs:
   test:
     name: 1. Test

@@ -1,4 +1,4 @@
-# KRAKEN Deploy Control
+# KRAKEN Deploy Controlm
 
 Dashboard estático para GitHub Pages que simula:
 - Pipeline GitHub Actions → Docker → Amazon ECR → DEV/CERT/PROD.

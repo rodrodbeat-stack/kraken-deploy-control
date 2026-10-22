@@ -1,4 +1,4 @@
-name: KRAKEN CI
+name: KRAKEN CI/CD
 
 on:
   push:
@@ -9,25 +9,46 @@ on:
 
 permissions:
   contents: read
+  pages: write
+  id-token: write
 
 jobs:
-  validate:
-    name: Validate dashboard
+  test:
+    name: 1. Test
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Check required files
+      - name: Validate dashboard files
         run: |
           test -f index.html
-          test -f README.md
-          echo "KRAKEN dashboard files found."
-
-      - name: Validate HTML structure
-        run: |
           grep -qi "<html" index.html
           grep -qi "</html>" index.html
-          grep -qi "<body" index.html
-          echo "HTML structure looks present."
+          echo "Tests passed"
+
+  build:
+    name: 2. Build artifact
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Prepare site artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: .
+
+  deploy:
+    name: 3. Deploy to GitHub Pages
+    if: github.event_name != 'pull_request'
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@v4

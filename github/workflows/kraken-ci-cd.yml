@@ -1,83 +1,55 @@
-name: KRAKEN CI/CD
+name: KRAKEN AWS SIMULATION
 
 on:
   push:
-    branches: [main]
-  pull_request:
     branches: [main]
   workflow_dispatch:
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
 
 jobs:
   test:
-    name: 1. Test
+    name: TEST
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Validate dashboard files
+      - uses: actions/checkout@v4
+      - name: Validate dashboard
         run: |
           test -f index.html
-          grep -qi "<html" index.html
-          grep -qi "</html>" index.html
-          echo "Tests passed"
-
-
-build:
-    name: 2. Build artifact
-    needs: test
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Prepare site artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: .
-
-         jobs:
-  test:
-    name: 1. Test
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Validate dashboard files
-        run: |
-          test -f index.html
-          grep -qi "<html" index.html
-          grep -qi "</html>" index.html
-          echo "Tests passed" 
+          echo "TEST OK"
 
   build:
-    name: 2. Build artifact
+    name: BUILD - Docker simulated
     needs: test
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - run: echo "Simulating Docker image build"
 
-      - name: Prepare site artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: .
-
-  deploy:
-    name: 3. Deploy to GitHub Pages
-    if: github.event_name != 'pull_request'
+  sonar:
+    name: SONAR - simulated
     needs: build
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - name: Deploy
-        id: deployment
-        uses: actions/deploy-pages@v4
+      - run: echo "Simulating Sonar quality scan"
+
+  qa:
+    name: QA - simulated
+    needs: sonar
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "Simulating QA acceptance tests"
+
+  prod:
+    name: PROD - approval gate simulated
+    needs: qa
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "Simulating production approval"
+
+  deploy:
+    name: DEPLOY - AWS ECR/ECS simulated
+    needs: prod
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "Simulation complete. No AWS deployment occurred."

@@ -378,9 +378,7 @@ function awsSim(){
   let i=0;awsLog("[REQUEST] GET /api/demo");
   const t=setInterval(()=>{if(i<steps.length)awsLog("→ "+steps[i++]);else{clearInterval(t);awsLog("[200 OK] Simulated response returned.");}},500);
 }
-
-  drawPipeline();
-  <script>
+<script>
   // Aquí está todo el JavaScript que ya tenía tu página:
   // navegación, pipeline, funciones y demás...
 
@@ -395,7 +393,6 @@ function awsSim(){
   // awsCacheHit()
   // awsCacheMiss()
 </script>
-  
 </body>
 </html>
 ```

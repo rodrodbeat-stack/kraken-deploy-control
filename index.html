@@ -1,578 +1,286 @@
+```html
 <!DOCTYPE html>
 <html lang="es">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AWS Production Flow — Interactive Architecture</title>
-
+<title>NEXUS // Control Plane</title>
 <style>
-:root {
-  --bg: #03101e;
-  --panel: #071b30;
-  --cyan: #00e5ff;
-  --blue: #168cff;
-  --green: #00e0a4;
-  --purple: #c05cff;
-  --orange: #ff9d2e;
-  --red: #ff477e;
-  --text: #eaf7ff;
-  --muted: #91aec7;
+:root{
+  --bg:#030b1b;--panel:#07152b;--panel2:#0a1b35;--line:#20385e;
+  --text:#e8f1ff;--muted:#8da5c9;--cyan:#00e5ff;--blue:#478bff;
+  --purple:#9c55ff;--green:#00dfad;--red:#ff477e;--orange:#ffad42;
 }
-
-* { box-sizing: border-box; }
-
-body {
-  margin: 0;
-  color: var(--text);
-  background:
-    radial-gradient(ellipse at top, #0a2543 0%, var(--bg) 65%);
-  font-family: "Segoe UI", Arial, sans-serif;
-}
-
-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 20px;
-  padding: 18px 24px;
-  border-bottom: 1px solid #16476b;
-  background: #041426;
-}
-
-.brand {
-  color: var(--orange);
-  font-size: 25px;
-  font-weight: 900;
-  letter-spacing: 2px;
-}
-
-header h1 {
-  margin: 0;
-  font-size: clamp(18px, 2.5vw, 30px);
-}
-
-header h1 span { color: var(--cyan); }
-
-.subtitle {
-  margin-top: 7px;
-  color: var(--muted);
-  font-size: 12px;
-  letter-spacing: 1px;
-}
-
-main { padding: 18px; }
-
-.section-title {
-  color: var(--cyan);
-  font-size: 12px;
-  letter-spacing: 2px;
-  margin: 0 0 12px;
-  text-transform: uppercase;
-}
-
-.panel {
-  border: 1px solid #17608a;
-  border-radius: 12px;
-  background: linear-gradient(145deg, #071b30dd, #041326ee);
-  box-shadow: 0 0 18px #008cff12;
-  padding: 16px;
-  margin-bottom: 16px;
-}
-
-.flow {
-  display: grid;
-  grid-template-columns: repeat(8, minmax(110px, 1fr));
-  gap: 10px;
-  align-items: stretch;
-}
-
-.node {
-  position: relative;
-  min-height: 135px;
-  border: 1px solid var(--node-color, var(--blue));
-  border-radius: 9px;
-  background: #07182b;
-  padding: 12px 8px;
-  text-align: center;
-  cursor: pointer;
-  transition: .2s;
-  overflow: hidden;
-}
-
-.node:hover,
-.node.active {
-  transform: translateY(-3px);
-  box-shadow: 0 0 18px color-mix(in srgb, var(--node-color) 50%, transparent);
-  background: #0b2944;
-}
-
-.node.active::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border: 2px solid var(--node-color);
-  border-radius: 9px;
-  animation: pulse 1s infinite alternate;
-  pointer-events: none;
-}
-
-@keyframes pulse {
-  from { opacity: .35; }
-  to { opacity: 1; }
-}
-
-.num {
-  display: inline-grid;
-  place-items: center;
-  width: 26px;
-  height: 26px;
-  border-radius: 50%;
-  color: #00111e;
-  background: var(--node-color);
-  font-weight: bold;
-  margin-bottom: 8px;
-}
-
-.icon {
-  font-size: 25px;
-  display: block;
-  margin-bottom: 8px;
-}
-
-.node strong {
-  display: block;
-  font-size: 13px;
-}
-
-.node small {
-  display: block;
-  color: var(--muted);
-  font-size: 11px;
-  margin-top: 6px;
-  line-height: 1.35;
-}
-
-.arrow {
-  color: var(--cyan);
-  font-size: 20px;
-  text-align: center;
-  align-self: center;
-}
-
-.controls {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  margin: 15px 0;
-}
-
-button {
-  border: 1px solid var(--cyan);
-  color: var(--cyan);
-  background: #06243a;
-  border-radius: 7px;
-  padding: 10px 15px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: .2s;
-}
-
-button:hover {
-  background: var(--cyan);
-  color: #00111e;
-  box-shadow: 0 0 15px #00e5ff55;
-}
-
-button.primary {
-  background: var(--green);
-  border-color: var(--green);
-  color: #001a16;
-}
-
-button.hit { border-color: var(--green); color: var(--green); }
-button.miss { border-color: var(--orange); color: var(--orange); }
-
-.architecture {
-  display: grid;
-  grid-template-columns: minmax(0, 3fr) minmax(230px, 1fr);
-  gap: 14px;
-}
-
-.vpc {
-  border: 1px dashed #278ab5;
-  border-radius: 12px;
-  padding: 15px;
-  background: #041a2b;
-}
-
-.vpc-heading {
-  color: var(--cyan);
-  font-weight: 800;
-  margin-bottom: 14px;
-}
-
-.azs {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-}
-
-.az {
-  border: 1px solid #00b98c;
-  border-radius: 9px;
-  padding: 12px;
-  background: #06251f55;
-}
-
-.az h3 {
-  color: var(--green);
-  font-size: 12px;
-  margin: 0 0 10px;
-}
-
-.subnet {
-  border: 1px solid #2878ac;
-  border-radius: 7px;
-  padding: 10px;
-  margin: 8px 0;
-  background: #061a30;
-}
-
-.subnet.db { border-color: var(--purple); }
-
-.subnet h4 {
-  margin: 0 0 8px;
-  font-size: 12px;
-}
-
-.mini-node {
-  display: inline-block;
-  margin: 4px;
-  padding: 7px;
-  border: 1px solid #1974ad;
-  border-radius: 5px;
-  font-size: 11px;
-  cursor: pointer;
-}
-
-.mini-node:hover { background: #123c5a; }
-
-.side-card {
-  border: 1px solid #00b98c;
-  border-radius: 9px;
-  padding: 12px;
-  margin-bottom: 12px;
-  background: #041e2b;
-}
-
-.side-card h3 {
-  color: var(--green);
-  font-size: 13px;
-  margin: 0 0 9px;
-}
-
-.side-card p {
-  color: var(--muted);
-  font-size: 11px;
-  line-height: 1.5;
-  margin: 5px 0;
-}
-
-.bottom-grid {
-  display: grid;
-  grid-template-columns: 1.2fr 1fr;
-  gap: 14px;
-}
-
-.log {
-  min-height: 120px;
-  max-height: 190px;
-  overflow: auto;
-  color: #9dfbd9;
-  font: 12px/1.7 Consolas, monospace;
-  background: #020b13;
-  border-radius: 7px;
-  padding: 10px;
-}
-
-.detail {
-  min-height: 100px;
-  color: var(--muted);
-  font-size: 13px;
-  line-height: 1.6;
-}
-
-.detail strong { color: var(--cyan); }
-
-.status {
-  color: var(--green);
-  font-size: 12px;
-  margin-left: auto;
-  align-self: center;
-}
-
-@media (max-width: 1100px) {
-  .flow { grid-template-columns: repeat(4, 1fr); }
-  .architecture { grid-template-columns: 1fr; }
-}
-
-@media (max-width: 650px) {
-  header { align-items: flex-start; flex-direction: column; }
-  main { padding: 10px; }
-  .flow { grid-template-columns: repeat(2, 1fr); }
-  .azs, .bottom-grid { grid-template-columns: 1fr; }
-}
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(ellipse at 45% -20%,#142b53,var(--bg) 65%);color:var(--text);font:14px "Segoe UI",Arial,sans-serif}
+button,input,select{font:inherit}
+button{cursor:pointer}
+.topbar{height:70px;display:flex;align-items:center;gap:24px;padding:0 22px;background:#040d20;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:5}
+.logo{font-size:24px;font-weight:900;letter-spacing:2px;white-space:nowrap}
+.logo span{color:var(--purple)}
+.tagline{font-size:10px;color:var(--muted);letter-spacing:1px;margin-top:4px}
+.envs{display:flex;gap:5px;padding:5px;border:1px solid var(--line);border-radius:9px}
+.envs button{background:transparent;color:var(--muted);border:0;padding:9px 13px;border-radius:6px}
+.envs button.selected{background:#46218a;color:white;box-shadow:0 0 12px #9c55ff66}
+.search{flex:1;min-width:100px;background:#07162b;border:1px solid #29476e;border-radius:8px;color:white;padding:11px}
+.operational{border:1px solid #087e70;border-radius:9px;padding:9px 14px;color:var(--green);white-space:nowrap;font-size:12px}
+.operational i{display:inline-block;width:9px;height:9px;background:var(--green);border-radius:50%;margin-right:7px;box-shadow:0 0 10px var(--green)}
+.layout{display:grid;grid-template-columns:205px minmax(0,1fr);min-height:calc(100vh - 70px)}
+.sidebar{padding:15px 11px;border-right:1px solid var(--line);background:#041027;display:flex;flex-direction:column;gap:6px}
+.nav{border:1px solid transparent;background:transparent;color:#a9bee0;text-align:left;padding:13px 12px;border-radius:8px;display:flex;gap:12px;align-items:center}
+.nav:hover,.nav.active{background:#25165c;color:#fff;border-color:#4d35a3}
+.nav .ico{width:22px;text-align:center;font-size:17px}
+.ai{margin-top:auto;border:1px solid #41338b;border-radius:8px;padding:13px;color:#bda8ff;background:#100f32}
+.ai small{display:block;color:var(--muted);margin-top:7px;line-height:1.5}
+main{padding:16px;min-width:0}
+.page{display:none}.page.active{display:block}
+.cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.card,.box{background:linear-gradient(145deg,#091a33,#061329);border:1px solid var(--line);border-radius:10px;padding:15px;min-width:0}
+.card{position:relative;overflow:hidden}
+.card:before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--accent,var(--cyan))}
+.card h3,.box h2{margin:0;font-size:14px;font-weight:650}
+.metric{font-size:34px;font-weight:800;margin:13px 0 8px}
+.metric small{font-size:14px;color:var(--green)}
+.muted{color:var(--muted);font-size:12px}
+.bar{height:5px;background:#172a49;border-radius:5px;overflow:hidden;margin:12px 0}
+.bar span{display:block;height:100%;background:var(--green);border-radius:5px}
+.spark{height:35px;display:flex;align-items:end;gap:4px;margin:8px 0}
+.spark i{flex:1;background:var(--accent,var(--cyan));opacity:.8;border-radius:2px 2px 0 0}
+.grid-main{display:grid;grid-template-columns:minmax(0,2fr) minmax(270px,1fr);gap:12px;margin-top:13px}
+.box h2{font-size:16px;margin-bottom:13px}
+.boxhead{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:12px}
+.smallselect{background:#07162b;color:#cce0ff;border:1px solid var(--line);border-radius:6px;padding:8px}
+.gitgraph{height:250px;background:#041027;border-radius:8px;position:relative;overflow:hidden}
+.gitgraph svg{width:100%;height:100%}
+.branchlabels{position:absolute;left:8px;top:10px;display:flex;flex-direction:column;gap:28px;font-size:11px}
+.branchlabels span{background:#182e57;padding:5px 8px;border-radius:5px}
+table{border-collapse:collapse;width:100%;font-size:12px}
+td,th{text-align:left;padding:9px 7px;border-bottom:1px solid #172a46;color:#a9bee0}
+th{color:#6f91bd;font-weight:500}
+.warning{border:1px solid #583052;border-radius:8px;padding:11px;margin-bottom:9px;background:#100e25}
+.warning .severity{font-size:10px;font-weight:bold;border-radius:10px;padding:3px 7px;background:#9e204c;color:white}
+.warning p{margin:8px 0 4px;font-weight:600}
+.warning small{color:var(--muted)}
+.pipeline{display:flex;align-items:center;justify-content:space-between;gap:5px;margin:25px 0 10px}
+.stage{flex:1;min-width:0;text-align:center}
+.stagebutton{width:54px;height:54px;border:1px solid var(--green);border-radius:50%;background:#062a2c;color:var(--green);font-size:22px;box-shadow:0 0 12px #00dfad22;position:relative}
+.stagebutton.done{background:#00b78d;color:#001a18}
+.stagebutton.fail{border-color:var(--orange);color:var(--orange);background:#38230a}
+.stagebutton.running{animation:glow .7s infinite alternate}
+@keyframes glow{to{box-shadow:0 0 23px var(--cyan);transform:scale(1.08)}}
+.stage b{display:block;font-size:11px;margin-top:8px}
+.stage small{display:block;color:var(--muted);font-size:10px;margin-top:4px}
+.pipearrow{color:var(--cyan);font-size:18px}
+.actions{display:flex;flex-wrap:wrap;gap:8px;margin:13px 0}
+.btn{border:1px solid #2b5b88;background:#0b2441;color:#cce8ff;padding:9px 13px;border-radius:6px}
+.btn.primary{background:#00b88c;color:#001d18;border-color:#00b88c;font-weight:700}
+.btn:hover{filter:brightness(1.2)}
+.log{background:#020914;border-radius:7px;padding:10px;color:#87fbd3;font:11px/1.7 Consolas,monospace;max-height:150px;overflow:auto}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
+.progressrow{margin:12px 0;color:#9eb5d5;font-size:12px}
+.progressrow .bar{margin:6px 0}
+.aws-flow{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.aws-node{border:1px solid #3c4d8b;background:#091a35;border-radius:8px;padding:15px;text-align:center;cursor:pointer}
+.aws-node:hover,.aws-node.active{border-color:var(--cyan);box-shadow:0 0 15px #00e5ff33}
+.aws-node b{display:block;margin:8px 0}
+.detail{color:var(--muted);line-height:1.7;margin-top:13px}
+.auditrow{display:flex;justify-content:space-between;padding:12px;border-bottom:1px solid var(--line);gap:12px}
+.pill{font-size:10px;border-radius:12px;padding:4px 8px;background:#163454;color:#9fdcff}
+.footer{display:flex;justify-content:space-between;gap:15px;padding:17px 5px;color:#6683a8;font-size:11px}
+@media(max-width:1100px){.cards{grid-template-columns:repeat(2,1fr)}.grid-main{grid-template-columns:1fr}.operational{display:none}}
+@media(max-width:720px){.topbar{height:auto;flex-wrap:wrap;padding:12px}.layout{grid-template-columns:1fr}.sidebar{display:grid;grid-template-columns:repeat(3,1fr)}.ai{display:none}.cards{grid-template-columns:1fr 1fr}.two{grid-template-columns:1fr}.pipeline{flex-wrap:wrap}.stage{flex:0 0 23%}.pipearrow{display:none}.aws-flow{grid-template-columns:repeat(2,1fr)}}
 </style>
 </head>
-
 <body>
-<header>
-  <div class="brand">aws</div>
-  <div>
-    <h1>AWS PRODUCCIÓN — <span>CloudFront Interactive Flow</span></h1>
-    <div class="subtitle">ALTA DISPONIBILIDAD · SEGURIDAD · ESCALABILIDAD · OBSERVABILIDAD</div>
-  </div>
+<header class="topbar">
+  <div><div class="logo">▲ NEXUS <span>//</span> CONTROL PLANE</div><div class="tagline">GOVERNANCE · SECURITY · CI/CD · OBSERVABILITY</div></div>
+  <div class="envs"><button class="selected" onclick="setEnv(this,'PROD')">PROD</button><button onclick="setEnv(this,'STAGING')">STAGING</button><button onclick="setEnv(this,'DEV')">DEV</button></div>
+  <input class="search" id="search" placeholder="⌕ Buscar repos, servicios, commits, políticas…" oninput="searchContent(this.value)">
+  <div class="operational"><i></i><b id="opstatus">SYSTEM OPERATIONAL</b><br><span class="muted">All systems healthy</span></div>
 </header>
 
+<div class="layout">
+<aside class="sidebar">
+  <button class="nav active" data-page="overview"><span class="ico">⌂</span>Overview</button>
+  <button class="nav" data-page="git"><span class="ico">⑂</span>Git Graph</button>
+  <button class="nav" data-page="governance"><span class="ico">⬡</span>Governance</button>
+  <button class="nav" data-page="security"><span class="ico">♢</span>Security</button>
+  <button class="nav" data-page="cicd"><span class="ico">∞</span>CI/CD</button>
+  <button class="nav" data-page="infrastructure"><span class="ico">☁</span>Infrastructure</button>
+  <button class="nav" data-page="audit"><span class="ico">▤</span>Audit Logs</button>
+  <div class="ai">✺ AI Assistant <small>Demo assistant: selecciona un módulo y explora sus indicadores.</small></div>
+</aside>
+
 <main>
-  <section class="panel">
-    <div class="section-title">01 / Flujo interactivo de la petición</div>
+<!-- OVERVIEW -->
+<section class="page active" id="overview">
+  <div class="cards">
+    <article class="card" style="--accent:var(--purple)"><h3>✦ Governance Score</h3><div class="metric">96<small>% ↗ 2%</small></div><div class="muted">Policies compliant · 48/50</div><div class="spark" style="--accent:var(--purple)"><i style="height:35%"></i><i style="height:50%"></i><i style="height:40%"></i><i style="height:65%"></i><i style="height:58%"></i><i style="height:78%"></i><i style="height:92%"></i><i style="height:80%"></i></div><div class="muted">Resource coverage 98% · Tagging 97%</div></article>
+    <article class="card" style="--accent:var(--red)"><h3>♙ Security Findings</h3><div class="metric">07 <small style="color:var(--red)">↓ 62%</small></div><div class="muted">Critical 1 · High 2 · Medium 4</div><div class="spark" style="--accent:var(--red)"><i style="height:25%"></i><i style="height:65%"></i><i style="height:38%"></i><i style="height:75%"></i><i style="height:45%"></i><i style="height:55%"></i><i style="height:82%"></i><i style="height:65%"></i></div><div class="muted">Últimos 7 días</div></article>
+    <article class="card" style="--accent:var(--cyan)"><h3>∞ Pipeline Success</h3><div class="metric">98.4<small>% ↗ 1.2%</small></div><div class="muted">Successful 42 · Failed 1 · Running 1</div><div class="spark" style="--accent:var(--green)"><i style="height:40%"></i><i style="height:55%"></i><i style="height:35%"></i><i style="height:70%"></i><i style="height:60%"></i><i style="height:75%"></i><i style="height:50%"></i><i style="height:95%"></i></div><div class="muted">Builds en la última semana</div></article>
+    <article class="card" style="--accent:var(--orange)"><h3>▤ Policy Violations</h3><div class="metric">03 <small>↓ 70%</small></div><div class="muted">Critical 1 · High 1 · Medium 1</div><div class="spark" style="--accent:var(--orange)"><i style="height:25%"></i><i style="height:45%"></i><i style="height:35%"></i><i style="height:65%"></i><i style="height:48%"></i><i style="height:78%"></i><i style="height:62%"></i><i style="height:95%"></i></div><div class="muted">Policies pendientes</div></article>
+  </div>
 
-    <div class="flow" id="flow">
-      <div class="node" data-step="0" style="--node-color:var(--blue)">
-        <span class="num">1</span><span class="icon">👤</span>
-        <strong>Usuario</strong><small>HTTPS · Navegador</small>
+  <div class="grid-main">
+    <section class="box">
+      <div class="boxhead"><h2>⑂ Git Graph</h2><select class="smallselect"><option>All Repositories</option><option>payments-api</option><option>platform-infra</option></select></div>
+      <div class="gitgraph">
+        <div class="branchlabels"><span>main</span><span style="background:#087e91">release/v2.8</span><span style="background:#154b9a">develop</span><span style="background:#087e65">feature/auth</span><span style="background:#9a5a12">feature/payment</span></div>
+        <svg viewBox="0 0 700 250" preserveAspectRatio="none">
+          <g stroke="#182e50" stroke-width="1"><path d="M0 35H700M0 75H700M0 115H700M0 155H700M0 195H700M0 235H700"/></g>
+          <path d="M65 35H680" stroke="#a855f7" stroke-width="3" fill="none"/>
+          <path d="M65 75H200Q225 75 225 100V115H500Q530 115 530 75V75H680" stroke="#00d9b0" stroke-width="3" fill="none"/>
+          <path d="M65 115H180Q210 115 210 140V155H680" stroke="#268bff" stroke-width="3" fill="none"/>
+          <path d="M65 155H190Q220 155 220 180V195H450Q480 195 480 155V155H680" stroke="#25c99b" stroke-width="3" fill="none"/>
+          <path d="M65 195H170Q200 195 200 220V235H430Q460 235 460 195V195H680" stroke="#ff9d38" stroke-width="3" fill="none"/>
+          <g fill="#d8e7ff" stroke="#7547e8" stroke-width="2"><circle cx="200" cy="35" r="5"/><circle cx="310" cy="35" r="5"/><circle cx="420" cy="35" r="5"/><circle cx="530" cy="35" r="5"/><circle cx="620" cy="35" r="5"/></g>
+          <g fill="#00e5ff"><circle cx="225" cy="115" r="5"/><circle cx="400" cy="115" r="5"/><circle cx="530" cy="75" r="5"/></g>
+          <g fill="#ffb347"><circle cx="200" cy="195" r="5"/><circle cx="450" cy="195" r="5"/></g>
+        </svg>
       </div>
-      <div class="node" data-step="1" style="--node-color:var(--purple)">
-        <span class="num">2</span><span class="icon">🌐</span>
-        <strong>Route 53</strong><small>DNS · Dominio</small>
-      </div>
-      <div class="node" data-step="2" style="--node-color:var(--purple)">
-        <span class="num">3</span><span class="icon">☁️</span>
-        <strong>CloudFront</strong><small>CDN · Caché Edge</small>
-      </div>
-      <div class="node" data-step="3" style="--node-color:var(--red)">
-        <span class="num">4</span><span class="icon">🛡️</span>
-        <strong>AWS WAF</strong><small>Web ACL · Filtro</small>
-      </div>
-      <div class="node" data-step="4" style="--node-color:var(--purple)">
-        <span class="num">5</span><span class="icon">⚖️</span>
-        <strong>ALB</strong><small>Balanceo HTTPS</small>
-      </div>
-      <div class="node" data-step="5" style="--node-color:var(--orange)">
-        <span class="num">6</span><span class="icon">📦</span>
-        <strong>ECS Fargate</strong><small>Aplicación · Auto Scaling</small>
-      </div>
-      <div class="node" data-step="6" style="--node-color:var(--green)">
-        <span class="num">7</span><span class="icon">🧊</span>
-        <strong>Redis</strong><small>Cache opcional</small>
-      </div>
-      <div class="node" data-step="7" style="--node-color:var(--blue)">
-        <span class="num">8</span><span class="icon">🗄️</span>
-        <strong>RDS / Aurora</strong><small>Multi-AZ · Datos</small>
-      </div>
-    </div>
+      <table><thead><tr><th>Commit</th><th>Message</th><th>Author</th><th>Age</th></tr></thead><tbody>
+        <tr><td>a3fc92e</td><td>Merge pull request #482</td><td>r.rodriguez</td><td>2h</td></tr>
+        <tr><td>7e4d1ab</td><td>Release v2.8.0</td><td>r.rodriguez</td><td>4h</td></tr>
+        <tr><td>c9b8f73</td><td>Update helm chart</td><td>j.lopez</td><td>6h</td></tr>
+      </tbody></table>
+    </section>
+    <section class="box"><h2>⚠ LIVE WARNINGS <span class="muted">· Demo</span></h2>
+      <div class="warning"><span class="severity">CRITICAL</span><small> 12 min ago</small><p>IAM policy drift detected</p><small>Role app-prod has extra permissions · Security</small></div>
+      <div class="warning"><span class="severity" style="background:#bd5b27">HIGH</span><small> 27 min ago</small><p>Pipeline secret scan failed</p><small>Potential exposed credential · CI/CD</small></div>
+      <div class="warning" style="border-color:#715126"><span class="severity" style="background:#bd7b22">MEDIUM</span><small> 1 h ago</small><p>Prod deployment awaiting health check</p><small>api-gateway · Deploy</small></div>
+      <button class="btn" onclick="go('security')">Review findings →</button>
+    </section>
+  </div>
 
-    <div class="controls">
-      <button class="primary" onclick="runPipeline()">▶ Simular petición</button>
-      <button class="hit" onclick="simulateCache(true)">⚡ Cache Hit</button>
-      <button class="miss" onclick="simulateCache(false)">↘ Cache Miss</button>
-      <button onclick="pauseFlow()">Ⅱ Pausar</button>
-      <button onclick="resetFlow()">↻ Reiniciar</button>
-      <span class="status" id="status">Sistema listo · Simulación</span>
-    </div>
-  </section>
+  <div class="two">
+    <section class="box"><h2>∞ CI/CD Pipeline</h2><div class="pipeline" id="pipeline"></div><div class="actions"><button class="btn primary" onclick="runPipeline()">▶ Run Pipeline</button><button class="btn" onclick="pausePipeline()">Ⅱ Pause</button><button class="btn" onclick="resetPipeline()">↻ Reset</button><span class="muted" id="pipelineStatus">Ready · simulated pipeline</span></div><div class="log" id="pipelineLog">[READY] Demo pipeline initialized. No external CI/CD connection.</div></section>
+    <section class="box"><h2>Governance & Security</h2><div class="progressrow">SOC 2 <b style="float:right">98%</b><div class="bar"><span style="width:98%"></span></div></div><div class="progressrow">ISO 27001 <b style="float:right">95%</b><div class="bar"><span style="width:95%"></span></div></div><div class="progressrow">NIST <b style="float:right">93%</b><div class="bar"><span style="width:93%"></span></div></div><div class="progressrow">PCI-DSS <b style="float:right">90%</b><div class="bar"><span style="width:90%"></span></div></div></section>
+  </div>
+</section>
 
-  <section class="architecture">
-    <div class="panel">
-      <div class="section-title">02 / Arquitectura AWS — VPC de producción</div>
-      <div class="vpc">
-        <div class="vpc-heading">VPC · 10.0.0.0/16 · Dos zonas de disponibilidad</div>
+<!-- GIT -->
+<section class="page" id="git"><div class="box"><h2>⑂ Git Graph / Repository Explorer</h2><p class="muted">Ramas, commits y merges de demostración.</p><div class="gitgraph"><svg viewBox="0 0 700 250" preserveAspectRatio="none"><path d="M20 40H680M20 90H400Q450 90 450 140H680M20 140H300Q350 140 350 90M20 190H250Q300 190 300 220H680" stroke="#9c55ff" stroke-width="4" fill="none"/><g fill="#00e5ff"><circle cx="130" cy="40" r="6"/><circle cx="250" cy="40" r="6"/><circle cx="400" cy="90" r="6"/><circle cx="450" cy="140" r="6"/><circle cx="350" cy="90" r="6"/></g></svg></div><table><tr><th>Branch</th><th>Último commit</th><th>Estado</th></tr><tr><td>main</td><td>a3fc92e · Merge #482</td><td><span class="pill">Protected</span></td></tr><tr><td>release/v2.8</td><td>7e4d1ab · Release v2.8.0</td><td><span class="pill">Ready</span></td></tr><tr><td>develop</td><td>c9b8f73 · Update helm chart</td><td><span class="pill">Active</span></td></tr></table></div></section>
 
-        <div class="azs">
-          <div class="az">
-            <h3>AZ-A · Zona de disponibilidad A</h3>
-            <div class="subnet">
-              <h4>🔓 Subred pública</h4>
-              <span class="mini-node" onclick="showDetail('ALB AZ-A','Recibe tráfico HTTPS y distribuye solicitudes hacia los targets saludables.')">⚖️ ALB</span>
-            </div>
-            <div class="subnet">
-              <h4>🔒 Subred privada · Aplicación</h4>
-              <span class="mini-node" onclick="showDetail('ECS Fargate AZ-A','Contenedores de aplicación. Escalado horizontal según demanda.')">📦 ECS App 1</span>
-              <span class="mini-node" onclick="showDetail('ECS Fargate AZ-A','Instancia simulada adicional del servicio de aplicación.')">📦 ECS App 2</span>
-            </div>
-            <div class="subnet db">
-              <h4>🔒 Subred privada · Base de datos</h4>
-              <span class="mini-node" onclick="showDetail('RDS Primary','Base de datos primaria. Acceso privado desde la aplicación.')">🗄️ RDS Primary</span>
-            </div>
-          </div>
+<!-- GOVERNANCE -->
+<section class="page" id="governance"><div class="box"><h2>⬡ Governance Center</h2><p class="muted">Evaluación simulada de políticas y cumplimiento.</p><div class="cards"><div class="card"><h3>Policies</h3><div class="metric">48/50</div><span class="muted">Cumplidas</span></div><div class="card"><h3>Tagged resources</h3><div class="metric">97%</div><span class="muted">Cobertura de tags</span></div><div class="card"><h3>Drift</h3><div class="metric">02</div><span class="muted">Desviaciones detectadas</span></div><div class="card"><h3>Exceptions</h3><div class="metric">01</div><span class="muted">Pendiente de revisión</span></div></div><h2 style="margin-top:22px">Policy checks</h2><div class="auditrow"><span>Required resource tags</span><span class="pill">Compliant</span></div><div class="auditrow"><span>Encryption at rest</span><span class="pill">Compliant</span></div><div class="auditrow"><span>Least privilege IAM</span><span class="pill" style="background:#61213b">Review required</span></div><div class="auditrow"><span>Public database exposure</span><span class="pill">Compliant</span></div></div></section>
 
-          <div class="az">
-            <h3>AZ-B · Zona de disponibilidad B</h3>
-            <div class="subnet">
-              <h4>🔓 Subred pública</h4>
-              <span class="mini-node" onclick="showDetail('ALB AZ-B','Zona alternativa para alta disponibilidad del balanceador.')">⚖️ ALB</span>
-            </div>
-            <div class="subnet">
-              <h4>🔒 Subred privada · Aplicación</h4>
-              <span class="mini-node" onclick="showDetail('ECS Fargate AZ-B','Contenedores distribuidos en una segunda zona.')">📦 ECS App 3</span>
-              <span class="mini-node" onclick="showDetail('ECS Auto Scaling','Escalado de tareas cuando aumenta la carga.')">📈 Auto Scaling</span>
-            </div>
-            <div class="subnet db">
-              <h4>🔒 Subred privada · Base de datos</h4>
-              <span class="mini-node" onclick="showDetail('RDS Standby','Instancia standby para disponibilidad Multi-AZ. No es una base pública.')">🗄️ RDS Standby</span>
-            </div>
-          </div>
-        </div>
+<!-- SECURITY -->
+<section class="page" id="security"><div class="box"><h2>♢ Security Findings</h2><p class="muted">Hallazgos ficticios para explorar la interfaz.</p><div class="warning"><span class="severity">CRITICAL</span><p>IAM policy drift detected</p><small>Revisar permisos excesivos en role app-prod.</small><div class="actions"><button class="btn" onclick="resolve(this)">Mark reviewed</button></div></div><div class="warning"><span class="severity" style="background:#bd5b27">HIGH</span><p>Secret scan failed</p><small>Validar el reporte del repositorio payments-api.</small><div class="actions"><button class="btn" onclick="resolve(this)">Mark reviewed</button></div></div><div class="warning" style="border-color:#715126"><span class="severity" style="background:#bd7b22">MEDIUM</span><p>Un-tagged resources</p><small>3 recursos sin etiquetas obligatorias.</small><div class="actions"><button class="btn" onclick="resolve(this)">Mark reviewed</button></div></div></div></section>
 
-        <div class="subnet" style="border-color:var(--cyan);margin-top:12px">
-          🔐 Security Groups · ALB → Aplicación → Base de datos · RDS sin acceso público
-        </div>
-      </div>
-    </div>
+<!-- CICD -->
+<section class="page" id="cicd"><div class="box"><h2>∞ CI/CD Command Center</h2><p class="muted">Pipeline interactivo local: no ejecuta builds ni despliegues reales.</p><div class="pipeline" id="pipeline2"></div><div class="actions"><button class="btn primary" onclick="runPipeline()">▶ Run Pipeline</button><button class="btn" onclick="pausePipeline()">Ⅱ Pause</button><button class="btn" onclick="resetPipeline()">↻ Reset</button></div><div class="log" id="pipelineLog2">[READY] Waiting for simulated run.</div></div></section>
 
-    <aside>
-      <div class="side-card">
-        <h3>🟢 Observabilidad</h3>
-        <p>CloudWatch Logs · Logs de aplicación</p>
-        <p>CloudWatch Metrics · Métricas y alarmas</p>
-        <p>X-Ray · Trazabilidad distribuida</p>
-        <p>Health Checks · Estado de los targets</p>
-      </div>
-      <div class="side-card" style="border-color:var(--orange)">
-        <h3 style="color:var(--orange)">🟠 Resiliencia</h3>
-        <p>ECS Auto Scaling</p>
-        <p>RDS Multi-AZ</p>
-        <p>Backups y snapshots</p>
-        <p>Distribución entre AZ-A y AZ-B</p>
-      </div>
-      <div class="side-card" style="border-color:var(--purple)">
-        <h3 style="color:var(--purple)">🟣 Seguridad</h3>
-        <p>AWS WAF · Protección web</p>
-        <p>ACM · Certificados TLS</p>
-        <p>IAM · Mínimo privilegio</p>
-        <p>Secrets Manager · Credenciales</p>
-      </div>
-    </aside>
-  </section>
+<!-- INFRA -->
+<section class="page" id="infrastructure"><div class="box"><h2>☁ Infrastructure / AWS Production</h2><p class="muted">Arquitectura de referencia interactiva. No es una cuenta AWS conectada.</p><div class="aws-flow">
+<div class="aws-node" onclick="awsDetail(this,'Route 53','DNS: resuelve el dominio y dirige al endpoint CDN.')">🌐<b>Route 53</b><small>DNS</small></div>
+<div class="aws-node" onclick="awsDetail(this,'CloudFront','CDN: Cache Hit entrega desde Edge; Cache Miss reenvía al origen.')">☁️<b>CloudFront</b><small>CDN / Cache</small></div>
+<div class="aws-node" onclick="awsDetail(this,'AWS WAF','Evalúa reglas de protección web antes de permitir el tráfico.')">🛡️<b>AWS WAF</b><small>Web ACL</small></div>
+<div class="aws-node" onclick="awsDetail(this,'Application Load Balancer','Distribuye solicitudes entre destinos saludables en varias zonas.')">⚖️<b>ALB</b><small>HTTPS</small></div>
+<div class="aws-node" onclick="awsDetail(this,'ECS Fargate','Ejecuta contenedores de la aplicación en subredes privadas.')">📦<b>ECS Fargate</b><small>Application</small></div>
+<div class="aws-node" onclick="awsDetail(this,'ElastiCache Redis','Caché opcional para acelerar lecturas y guardar datos temporales.')">🧊<b>Redis</b><small>Cache</small></div>
+<div class="aws-node" onclick="awsDetail(this,'RDS / Aurora','Base de datos relacional privada con opción Multi-AZ.')">🗄️<b>RDS / Aurora</b><small>Multi-AZ</small></div>
+<div class="aws-node" onclick="awsDetail(this,'CloudWatch','Logs, métricas, alarmas y visibilidad operacional.')">📊<b>CloudWatch</b><small>Monitoring</small></div>
+</div><div class="actions"><button class="btn primary" onclick="awsSim()">▶ Simular request</button><button class="btn" onclick="awsCache(true)">⚡ Cache Hit</button><button class="btn" onclick="awsCache(false)">↘ Cache Miss</button></div><div class="detail" id="awsDetail">Selecciona un servicio para inspeccionar su función.</div><div class="log" id="awsLog">[INFO] Arquitectura de demostración cargada.</div></div></section>
 
-  <section class="bottom-grid">
-    <div class="panel">
-      <div class="section-title">03 / Consola de eventos</div>
-      <div class="log" id="log">[READY] Simulador iniciado.<br>[INFO] No existe conexión real con AWS.</div>
-    </div>
+<!-- AUDIT -->
+<section class="page" id="audit"><div class="box"><h2>▤ Audit Logs</h2><p class="muted">Registro local de eventos ficticios. Usa el buscador superior para filtrar texto.</p><div id="auditRows"><div class="auditrow"><span>Pipeline #482 · Build succeeded</span><span class="muted">2m ago</span></div><div class="auditrow"><span>Policy check · resource tags evaluated</span><span class="muted">18m ago</span></div><div class="auditrow"><span>Security scan · 1 critical finding</span><span class="muted">27m ago</span></div><div class="auditrow"><span>Deployment · staging v2.8.0</span><span class="muted">1h ago</span></div><div class="auditrow"><span>IAM review · role app-prod</span><span class="muted">2h ago</span></div></div></div></section>
 
-    <div class="panel">
-      <div class="section-title">04 / Detalle del componente</div>
-      <div class="detail" id="detail">
-        Selecciona un componente del flujo o de la arquitectura para ver su función.
-      </div>
-    </div>
-  </section>
+<div class="footer"><span>AWS · Azure · GCP · Kubernetes · Terraform · Docker</span><span>NEXUS CONTROL PLANE · v2.8.0 · DEMO MODE</span></div>
 </main>
+</div>
 
 <script>
-const nodes = [...document.querySelectorAll(".node")];
-const statusEl = document.getElementById("status");
-const logEl = document.getElementById("log");
-const detailEl = document.getElementById("detail");
-
-let timer = null;
-let currentStep = 0;
-let paused = false;
-
-const descriptions = [
-  ["Usuario / Navegador", "El cliente inicia una petición HTTPS a la aplicación."],
-  ["Route 53", "Resuelve el nombre de dominio y dirige al endpoint de CloudFront."],
-  ["CloudFront", "CDN que entrega contenido cacheado o reenvía la petición al origen."],
-  ["AWS WAF", "Evalúa reglas de seguridad web antes de permitir que la petición continúe."],
-  ["Application Load Balancer", "Distribuye tráfico entre destinos saludables de la aplicación."],
-  ["ECS Fargate", "Ejecuta los contenedores de la aplicación sin administrar servidores."],
-  ["ElastiCache Redis", "Puede acelerar lecturas frecuentes y almacenar sesiones o datos temporales."],
-  ["RDS / Aurora", "Base de datos relacional administrada, desplegada en subredes privadas."]
-];
-
-nodes.forEach(node => {
-  node.addEventListener("click", () => {
-    const step = Number(node.dataset.step);
-    showDetail(descriptions[step][0], descriptions[step][1]);
-    highlight(step);
+const navs=document.querySelectorAll(".nav");
+navs.forEach(n=>n.addEventListener("click",()=>go(n.dataset.page)));
+function go(page){
+  document.querySelectorAll(".page").forEach(p=>p.classList.toggle("active",p.id===page));
+  navs.forEach(n=>n.classList.toggle("active",n.dataset.page===page));
+}
+function setEnv(btn,env){
+  document.querySelectorAll(".envs button").forEach(b=>b.classList.remove("selected"));
+  btn.classList.add("selected");
+  document.getElementById("opstatus").textContent=env+" · OPERATIONAL";
+  logPipe("Environment switched to "+env+" (simulated).");
+}
+function searchContent(q){
+  q=q.toLowerCase().trim();
+  document.querySelectorAll(".page.active .card,.page.active .warning,.page.active .auditrow,.page.active .aws-node").forEach(el=>{
+    el.style.opacity=!q||el.textContent.toLowerCase().includes(q)?"1":".22";
   });
-});
-
-function showDetail(title, text) {
-  detailEl.innerHTML = `<strong>${title}</strong><br>${text}`;
 }
-
-function writeLog(message) {
-  const time = new Date().toLocaleTimeString();
-  logEl.innerHTML += `<br>[${time}] ${message}`;
-  logEl.scrollTop = logEl.scrollHeight;
+function resolve(btn){
+  const item=btn.closest(".warning");
+  item.style.opacity=".45";
+  btn.textContent="Reviewed ✓";
+  btn.disabled=true;
 }
-
-function highlight(step) {
-  nodes.forEach((node, i) => node.classList.toggle("active", i === step));
+const stages=[
+  ["</>","Source","main"],["◆","Build","#482"],["⬡","SAST","Passed"],
+  ["⚗","QA","Tests OK"],["🔒","Security Gate","1 issue"],["🚀","Deploy","v2.8.0"],["⌁","Monitor","Healthy"]
+];
+let pipeTimer=null,pipeStep=0,pipePaused=false;
+function drawPipeline(){
+  ["pipeline","pipeline2"].forEach(id=>{
+    const el=document.getElementById(id);if(!el)return;
+    el.innerHTML=stages.map((s,i)=>`
+      <div class="stage"><button class="stagebutton" id="${id}-stage-${i}">${s[0]}</button>
+      <b>${s[1]}</b><small>${s[2]}</small></div>${i<stages.length-1?'<span class="pipearrow">→</span>':''}`).join("");
+  });
 }
-
-function runPipeline() {
-  clearInterval(timer);
-  paused = false;
-  currentStep = 0;
-  logEl.innerHTML = "";
-  statusEl.textContent = "Petición en tránsito…";
-  writeLog("GET /api/products/42 · HTTPS");
-
-  timer = setInterval(() => {
-    if (paused) return;
-
-    highlight(currentStep);
-    writeLog("Paso " + (currentStep + 1) + ": " + descriptions[currentStep][0]);
-    showDetail(descriptions[currentStep][0], descriptions[currentStep][1]);
-
-    currentStep++;
-
-    if (currentStep >= nodes.length) {
-      clearInterval(timer);
-      statusEl.textContent = "200 OK · Flujo completado";
-      writeLog("Respuesta simulada: HTTP 200 OK");
-      writeLog("RDS → Aplicación → ALB → CloudFront → Usuario");
-      highlight(-1);
+function logPipe(msg){
+  ["pipelineLog","pipelineLog2"].forEach(id=>{
+    const el=document.getElementById(id);if(el){el.innerHTML+="<br>["+new Date().toLocaleTimeString()+"] "+msg;el.scrollTop=el.scrollHeight;}
+  });
+}
+function runPipeline(){
+  clearInterval(pipeTimer);pipeStep=0;pipePaused=false;
+  ["pipelineLog","pipelineLog2"].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent="[RUN] Starting simulated pipeline…";});
+  document.getElementById("pipelineStatus").textContent="Running…";
+  pipeTimer=setInterval(()=>{
+    if(pipePaused)return;
+    if(pipeStep>0)stages.forEach((s,i)=>["pipeline","pipeline2"].forEach(id=>{
+      const b=document.getElementById(id+"-stage-"+(i));
+      if(b)b.classList.toggle("done",i<pipeStep);
+    }));
+    if(pipeStep<stages.length){
+      ["pipeline","pipeline2"].forEach(id=>{
+        const b=document.getElementById(id+"-stage-"+pipeStep);
+        if(b)b.classList.add("running");
+      });
+      logPipe("Executing stage: "+stages[pipeStep][1]);
+      pipeStep++;
+    }else{
+      clearInterval(pipeTimer);
+      ["pipeline","pipeline2"].forEach(id=>document.querySelectorAll("#"+id+" .stagebutton").forEach(b=>b.classList.remove("running")));
+      document.getElementById("pipelineStatus").textContent="Completed · simulated";
+      logPipe("Pipeline completed. No real deployment performed.");
     }
-  }, 850);
+  },850);
 }
-
-function simulateCache(hit) {
-  clearInterval(timer);
-  highlight(2);
-
-  if (hit) {
-    statusEl.textContent = "Cache Hit · Respuesta desde Edge";
-    writeLog("CACHE HIT: CloudFront entrega la respuesta cacheada.");
-    writeLog("La petición no necesita llegar a ECS ni RDS.");
-    showDetail("CloudFront Cache Hit", "Contenido disponible en Edge. Respuesta directa al usuario; el origen no se consulta en esta simulación.");
-  } else {
-    statusEl.textContent = "Cache Miss · Se consulta el origen";
-    writeLog("CACHE MISS: CloudFront reenvía al origen.");
-    writeLog("WAF → ALB → ECS → Redis/RDS → respuesta");
-    showDetail("CloudFront Cache Miss", "El contenido no está cacheado. La petición continúa hacia el origen, pasa por WAF y ALB, y la aplicación consulta sus servicios.");
-    runPipeline();
-  }
+function pausePipeline(){pipePaused=!pipePaused;document.getElementById("pipelineStatus").textContent=pipePaused?"Paused":"Running…";logPipe(pipePaused?"Pipeline paused.":"Pipeline resumed.");}
+function resetPipeline(){
+  clearInterval(pipeTimer);pipeStep=0;pipePaused=false;drawPipeline();
+  document.getElementById("pipelineStatus").textContent="Ready · simulated pipeline";
+  ["pipelineLog","pipelineLog2"].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent="[READY] Reset complete.";});
 }
-
-function pauseFlow() {
-  paused = !paused;
-  statusEl.textContent = paused ? "Simulación pausada" : "Simulación en curso";
+function awsDetail(el,title,desc){
+  document.querySelectorAll(".aws-node").forEach(n=>n.classList.remove("active"));el.classList.add("active");
+  document.getElementById("awsDetail").innerHTML="<b style='color:var(--cyan)'>"+title+"</b><br>"+desc;
 }
-
-function resetFlow() {
-  clearInterval(timer);
-  paused = false;
-  currentStep = 0;
-  highlight(-1);
-  statusEl.textContent = "Sistema listo · Simulación";
-  logEl.innerHTML = "[READY] Flujo reiniciado.";
-  detailEl.textContent = "Selecciona un componente para ver su función.";
+function awsLog(msg){const el=document.getElementById("awsLog");el.innerHTML+="<br>"+msg;el.scrollTop=el.scrollHeight;}
+function awsCache(hit){
+  document.getElementById("awsDetail").innerHTML=hit?
+    "<b style='color:var(--green)'>Cache Hit</b><br>CloudFront responde desde Edge. El origen no necesita procesar esta petición.":
+    "<b style='color:var(--orange)'>Cache Miss</b><br>CloudFront reenvía la petición al origen: WAF → ALB → ECS → Redis/RDS.";
+  awsLog(hit?"[CACHE HIT] Edge responde directamente.":"[CACHE MISS] Request forwarded to origin.");
 }
+function awsSim(){
+  const steps=["Usuario → Route 53","Route 53 → CloudFront","CloudFront → WAF","WAF → ALB","ALB → ECS Fargate","ECS → Redis/RDS","Respuesta → usuario"];
+  let i=0;awsLog("[REQUEST] GET /api/demo");
+  const t=setInterval(()=>{if(i<steps.length)awsLog("→ "+steps[i++]);else{clearInterval(t);awsLog("[200 OK] Simulated response returned.");}},500);
+}
+drawPipeline();
 </script>
 </body>
 </html>
+```

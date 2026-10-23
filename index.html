@@ -2,73 +2,577 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>KRAKEN // Deploy Control</title>
-<style>
-:root{--bg:#050914;--panel:#0b1425;--panel2:#0d1b30;--line:#173954;--cyan:#00e5ff;--blue:#438cff;--green:#00f5a0;--purple:#b66bff;--orange:#ffb547;--red:#ff426d;--text:#d9e9ff;--muted:#7893b5}
-*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 20% 0%,#102344 0%,transparent 38%),var(--bg);color:var(--text);font:14px/1.45 ui-monospace,SFMono-Regular,Consolas,monospace}
-body:before{content:"";position:fixed;inset:0;pointer-events:none;background-image:linear-gradient(#12304a33 1px,transparent 1px),linear-gradient(90deg,#12304a33 1px,transparent 1px);background-size:32px 32px;mask-image:linear-gradient(to bottom,#000,transparent 85%)}
-header{display:flex;align-items:center;justify-content:space-between;padding:18px 26px;border-bottom:1px solid #16425b;background:#06101eea;position:sticky;top:0;z-index:5}
-.brand{font-weight:900;letter-spacing:2px;font-size:20px;color:#fff}.brand b{color:var(--cyan)}.status{color:var(--green);border:1px solid #00f5a055;padding:5px 10px;border-radius:20px;font-size:11px}
-main{max-width:1450px;margin:auto;padding:22px}.hero{display:flex;justify-content:space-between;gap:20px;align-items:flex-end;margin-bottom:18px}.eyebrow{color:var(--cyan);font-size:11px;letter-spacing:2px}.hero h1{margin:5px 0;font-size:clamp(23px,3vw,36px);letter-spacing:-1px}.hero p{color:var(--muted);margin:0}.controls{display:flex;gap:8px;flex-wrap:wrap}
-button{font:inherit;cursor:pointer;border:1px solid #236080;background:#0a2035;color:var(--text);padding:10px 14px;border-radius:7px;transition:.2s}button:hover{border-color:var(--cyan);box-shadow:0 0 16px #00e5ff22}button.primary{background:linear-gradient(100deg,#007f9d,#245bca);border-color:#00dfff;color:white;font-weight:bold}button.danger{border-color:#7d2945;color:#ff8aa5}
-.grid{display:grid;grid-template-columns:1.6fr 1fr;gap:16px}.card{border:1px solid var(--line);background:linear-gradient(145deg,#0c192b,#07101e);border-radius:12px;padding:16px;box-shadow:0 12px 35px #0004}.card h2{margin:0 0 12px;font-size:14px;letter-spacing:1px;color:#b9d9f8}.sectionhead{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}.tag{font-size:10px;color:var(--muted);border:1px solid #24445d;padding:3px 7px;border-radius:4px}
-.pipeline{display:grid;grid-template-columns:repeat(6,minmax(100px,1fr));gap:10px;position:relative}.stage{position:relative;border:1px solid #244660;background:#0b1b2e;border-radius:8px;padding:12px 9px;min-height:120px;cursor:pointer;overflow:hidden}.stage:after{content:"";position:absolute;left:0;bottom:0;width:0;height:3px;background:var(--cyan);transition:width .3s}.stage.active{border-color:var(--cyan);box-shadow:0 0 18px #00e5ff24}.stage.active:after{width:100%}.stage.ok{border-color:#00a978}.stage.fail{border-color:var(--red)}.stage .num{font-size:10px;color:var(--muted)}.stage .icon{font-size:21px;margin:7px 0}.stage strong{display:block;font-size:12px}.stage small{display:block;color:var(--muted);font-size:10px;margin-top:5px}.stage .state{font-size:10px;margin-top:8px;color:var(--orange)}
-.flowline{height:2px;background:linear-gradient(90deg,var(--cyan),#344f9a);margin:13px 0;opacity:.8}
-.architecture-pipeline .stage{min-height:145px;background:linear-gradient(160deg,#102941,#071321);border-color:#24536f}
-.architecture-pipeline .stage:before{content:"";position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--cyan),transparent)}
-.architecture-pipeline .stage .icon{color:var(--cyan);text-shadow:0 0 12px #00e5ff55}
-.architecture-pipeline .stage.ok{background:linear-gradient(160deg,#073b34,#071321);box-shadow:0 0 14px #00f5a018}
-.architecture-pipeline .stage.fail{background:linear-gradient(160deg,#401426,#071321)}
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AWS Production Flow — Interactive Architecture</title>
 
-.envs{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.env{border:1px solid #28506a;border-radius:9px;padding:12px;background:#091829;position:relative}.env h3{margin:0 0 8px;font-size:13px}.env.dev h3{color:var(--green)}.env.cert h3{color:var(--blue)}.env.prod h3{color:var(--purple)}.env p{font-size:11px;color:var(--muted);margin:5px 0}.pill{display:inline-block;font-size:10px;padding:3px 6px;border-radius:4px;background:#102c40;color:#a8dfff}.gate{font-size:10px;color:var(--orange);margin-top:8px}
-.arch{display:grid;grid-template-columns:1fr 1fr;gap:12px}.archflow{display:flex;flex-wrap:wrap;align-items:center;gap:6px}.node{border:1px solid #22516d;border-radius:7px;padding:9px 10px;background:#09192a;font-size:11px;min-width:100px;text-align:center}.node b{display:block;color:#fff}.arrow{color:var(--cyan);font-size:18px}.vpc{border:1px dashed #286184;padding:12px;border-radius:9px;margin-top:12px}.subnets{display:grid;grid-template-columns:1fr 1fr;gap:8px}.subnet{border:1px solid #25465f;border-radius:7px;padding:9px}.subnet label{display:block;color:var(--cyan);font-size:10px;margin-bottom:7px}.subnet .node{margin:5px 0;width:100%}
-.log{height:195px;overflow:auto;background:#030812;border:1px solid #19374e;border-radius:7px;padding:10px;font-size:11px;color:#8eb3d3}.log div{margin:3px 0}.log .good{color:var(--green)}.log .warn{color:var(--orange)}.log .bad{color:var(--red)}.bottom{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px}.metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.metric{padding:10px;background:#081728;border:1px solid #1b3a55;border-radius:7px}.metric span{font-size:10px;color:var(--muted)}.metric strong{display:block;font-size:20px;color:var(--cyan);margin-top:4px}.footer{padding:22px;text-align:center;color:#456783;font-size:10px}
-@media(max-width:900px){.grid,.bottom{grid-template-columns:1fr}.pipeline{grid-template-columns:repeat(3,1fr)}.hero{align-items:flex-start;flex-direction:column}.arch{grid-template-columns:1fr}}
-@media(max-width:520px){main{padding:12px}.pipeline{grid-template-columns:repeat(2,1fr)}.envs{grid-template-columns:1fr}.subnets{grid-template-columns:1fr}header{padding:12px}}
+<style>
+:root {
+  --bg: #03101e;
+  --panel: #071b30;
+  --cyan: #00e5ff;
+  --blue: #168cff;
+  --green: #00e0a4;
+  --purple: #c05cff;
+  --orange: #ff9d2e;
+  --red: #ff477e;
+  --text: #eaf7ff;
+  --muted: #91aec7;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  color: var(--text);
+  background:
+    radial-gradient(ellipse at top, #0a2543 0%, var(--bg) 65%);
+  font-family: "Segoe UI", Arial, sans-serif;
+}
+
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 18px 24px;
+  border-bottom: 1px solid #16476b;
+  background: #041426;
+}
+
+.brand {
+  color: var(--orange);
+  font-size: 25px;
+  font-weight: 900;
+  letter-spacing: 2px;
+}
+
+header h1 {
+  margin: 0;
+  font-size: clamp(18px, 2.5vw, 30px);
+}
+
+header h1 span { color: var(--cyan); }
+
+.subtitle {
+  margin-top: 7px;
+  color: var(--muted);
+  font-size: 12px;
+  letter-spacing: 1px;
+}
+
+main { padding: 18px; }
+
+.section-title {
+  color: var(--cyan);
+  font-size: 12px;
+  letter-spacing: 2px;
+  margin: 0 0 12px;
+  text-transform: uppercase;
+}
+
+.panel {
+  border: 1px solid #17608a;
+  border-radius: 12px;
+  background: linear-gradient(145deg, #071b30dd, #041326ee);
+  box-shadow: 0 0 18px #008cff12;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.flow {
+  display: grid;
+  grid-template-columns: repeat(8, minmax(110px, 1fr));
+  gap: 10px;
+  align-items: stretch;
+}
+
+.node {
+  position: relative;
+  min-height: 135px;
+  border: 1px solid var(--node-color, var(--blue));
+  border-radius: 9px;
+  background: #07182b;
+  padding: 12px 8px;
+  text-align: center;
+  cursor: pointer;
+  transition: .2s;
+  overflow: hidden;
+}
+
+.node:hover,
+.node.active {
+  transform: translateY(-3px);
+  box-shadow: 0 0 18px color-mix(in srgb, var(--node-color) 50%, transparent);
+  background: #0b2944;
+}
+
+.node.active::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border: 2px solid var(--node-color);
+  border-radius: 9px;
+  animation: pulse 1s infinite alternate;
+  pointer-events: none;
+}
+
+@keyframes pulse {
+  from { opacity: .35; }
+  to { opacity: 1; }
+}
+
+.num {
+  display: inline-grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  color: #00111e;
+  background: var(--node-color);
+  font-weight: bold;
+  margin-bottom: 8px;
+}
+
+.icon {
+  font-size: 25px;
+  display: block;
+  margin-bottom: 8px;
+}
+
+.node strong {
+  display: block;
+  font-size: 13px;
+}
+
+.node small {
+  display: block;
+  color: var(--muted);
+  font-size: 11px;
+  margin-top: 6px;
+  line-height: 1.35;
+}
+
+.arrow {
+  color: var(--cyan);
+  font-size: 20px;
+  text-align: center;
+  align-self: center;
+}
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 15px 0;
+}
+
+button {
+  border: 1px solid var(--cyan);
+  color: var(--cyan);
+  background: #06243a;
+  border-radius: 7px;
+  padding: 10px 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: .2s;
+}
+
+button:hover {
+  background: var(--cyan);
+  color: #00111e;
+  box-shadow: 0 0 15px #00e5ff55;
+}
+
+button.primary {
+  background: var(--green);
+  border-color: var(--green);
+  color: #001a16;
+}
+
+button.hit { border-color: var(--green); color: var(--green); }
+button.miss { border-color: var(--orange); color: var(--orange); }
+
+.architecture {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(230px, 1fr);
+  gap: 14px;
+}
+
+.vpc {
+  border: 1px dashed #278ab5;
+  border-radius: 12px;
+  padding: 15px;
+  background: #041a2b;
+}
+
+.vpc-heading {
+  color: var(--cyan);
+  font-weight: 800;
+  margin-bottom: 14px;
+}
+
+.azs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.az {
+  border: 1px solid #00b98c;
+  border-radius: 9px;
+  padding: 12px;
+  background: #06251f55;
+}
+
+.az h3 {
+  color: var(--green);
+  font-size: 12px;
+  margin: 0 0 10px;
+}
+
+.subnet {
+  border: 1px solid #2878ac;
+  border-radius: 7px;
+  padding: 10px;
+  margin: 8px 0;
+  background: #061a30;
+}
+
+.subnet.db { border-color: var(--purple); }
+
+.subnet h4 {
+  margin: 0 0 8px;
+  font-size: 12px;
+}
+
+.mini-node {
+  display: inline-block;
+  margin: 4px;
+  padding: 7px;
+  border: 1px solid #1974ad;
+  border-radius: 5px;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.mini-node:hover { background: #123c5a; }
+
+.side-card {
+  border: 1px solid #00b98c;
+  border-radius: 9px;
+  padding: 12px;
+  margin-bottom: 12px;
+  background: #041e2b;
+}
+
+.side-card h3 {
+  color: var(--green);
+  font-size: 13px;
+  margin: 0 0 9px;
+}
+
+.side-card p {
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.5;
+  margin: 5px 0;
+}
+
+.bottom-grid {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 14px;
+}
+
+.log {
+  min-height: 120px;
+  max-height: 190px;
+  overflow: auto;
+  color: #9dfbd9;
+  font: 12px/1.7 Consolas, monospace;
+  background: #020b13;
+  border-radius: 7px;
+  padding: 10px;
+}
+
+.detail {
+  min-height: 100px;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.detail strong { color: var(--cyan); }
+
+.status {
+  color: var(--green);
+  font-size: 12px;
+  margin-left: auto;
+  align-self: center;
+}
+
+@media (max-width: 1100px) {
+  .flow { grid-template-columns: repeat(4, 1fr); }
+  .architecture { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 650px) {
+  header { align-items: flex-start; flex-direction: column; }
+  main { padding: 10px; }
+  .flow { grid-template-columns: repeat(2, 1fr); }
+  .azs, .bottom-grid { grid-template-columns: 1fr; }
+}
 </style>
 </head>
+
 <body>
-<header><div class="brand">KRAKEN <b>// DEPLOY CONTROL</b></div><div class="status">● SIMULATION MODE / AWS</div></header>
+<header>
+  <div class="brand">aws</div>
+  <div>
+    <h1>AWS PRODUCCIÓN — <span>CloudFront Interactive Flow</span></h1>
+    <div class="subtitle">ALTA DISPONIBILIDAD · SEGURIDAD · ESCALABILIDAD · OBSERVABILIDAD</div>
+  </div>
+</header>
+
 <main>
-<section class="hero"><div><div class="eyebrow">GITHUB ACTIONS · AWS DELIVERY PLATFORM</div><h1>Command Center <span style="color:var(--cyan)">CI/CD</span></h1><p>Commit → Build → ECR → promoción DEV / CERT / PROD → observabilidad</p></div>
-<div class="controls"><button class="primary" id="run">▶ RUN PIPELINE</button><button id="request">↗ Simular request web</button><button class="danger" id="fault">⚠ Inject failure</button><button id="reset">↺ Reset</button></div></section>
-<div class="grid">
-<section class="card"><div class="sectionhead"><h2>01 / PIPELINE EXECUTION</h2><span class="tag" id="pipelineState">IDLE</span></div>
-<div class="pipeline architecture-pipeline" id="pipeline">
-<div class="stage" data-name="TEST"><div class="num">01 / QUALITY GATE</div><div class="icon">⌁</div><strong>TEST</strong><small>Validación de repo · checks</small><div class="state">WAITING</div></div>
-<div class="stage" data-name="BUILD"><div class="num">02 / PACKAGE</div><div class="icon">▣</div><strong>BUILD</strong><small>Artefacto · Docker simulado</small><div class="state">WAITING</div></div>
-<div class="stage" data-name="SONAR"><div class="num">03 / CODE QUALITY</div><div class="icon">◉</div><strong>SONAR</strong><small>Quality scan simulado</small><div class="state">WAITING</div></div>
-<div class="stage" data-name="QA"><div class="num">04 / ACCEPTANCE</div><div class="icon">✓</div><strong>QA</strong><small>Smoke tests · aceptación</small><div class="state">WAITING</div></div>
-<div class="stage" data-name="PROD"><div class="num">05 / RELEASE GATE</div><div class="icon">⛨</div><strong>PROD</strong><small>Aprobación de release simulada</small><div class="state">WAITING</div></div>
-<div class="stage" data-name="DEPLOY"><div class="num">06 / DELIVERY</div><div class="icon">⇢</div><strong>DEPLOY</strong><small>ECR → ECS · AWS simulado</small><div class="state">WAITING</div></div>
-</div>
-<div class="flowline"></div><div class="sectionhead"><h2>02 / ENVIRONMENT PROMOTION</h2><span class="tag">same image digest</span></div>
-<div class="envs"><div class="env dev"><h3>● DEV / AUTO</h3><span class="pill">dev branch</span><p>Deploy automático</p><p>Smoke test · logs</p><div class="gate">Gate: health check</div></div><div class="env cert"><h3>● CERT / QA</h3><span class="pill">release/*</span><p>Integración · validación funcional</p><p>QA y aprobación</p><div class="gate">Gate: aprobación QA</div></div><div class="env prod"><h3>● PROD / GUARDED</h3><span class="pill">main protegida</span><p>Aprobación manual</p><p>Canary / rollback</p><div class="gate">Gate: release approval</div></div></div>
-</section>
-<section class="card"><div class="sectionhead"><h2>03 / EVENT STREAM</h2><span class="tag">LIVE SIMULATION</span></div><div class="log" id="log"><div>▸ Kraken console ready. Esperando ejecución…</div><div>▸ AWS SIMULATION: etapas ilustrativas; no hay conexión real con AWS.</div></div><div style="margin-top:12px" class="metrics"><div class="metric"><span>BUILD</span><strong id="buildTime">—</strong></div><div class="metric"><span>IMAGE</span><strong id="digest">—</strong></div><div class="metric"><span>RELEASE</span><strong id="release">v—</strong></div></div></section>
-</div>
-<div class="bottom">
-<section class="card"><div class="sectionhead"><h2>04 / AWS PRODUCTION ARCHITECTURE</h2><span class="tag">VPC · Multi-AZ</span></div>
-<div class="archflow"><div class="node"><b>Browser</b>HTTPS request</div><span class="arrow">→</span><div class="node"><b>Route 53</b>DNS</div><span class="arrow">→</span><div class="node"><b>CloudFront</b>CDN / cache</div><span class="arrow">→</span><div class="node"><b>AWS WAF</b>Web ACL</div><span class="arrow">→</span><div class="node"><b>ALB</b>HTTPS / target group</div></div>
-<div class="vpc"><div style="color:var(--cyan);font-size:11px;margin-bottom:8px">VPC 10.20.0.0/16 · private application & database tiers</div><div class="subnets"><div class="subnet"><label>AZ-A · private app subnet</label><div class="node"><b>ECS Fargate / EKS</b>Application service</div><div class="node"><b>Redis (optional)</b>Cache</div><div class="node"><b>RDS/Aurora</b>Primary DB</div></div><div class="subnet"><label>AZ-B · private app subnet</label><div class="node"><b>ECS Fargate / EKS</b>Healthy replica</div><div class="node"><b>Redis (optional)</b>Cache</div><div class="node"><b>RDS/Aurora</b>Multi-AZ standby</div></div></div></div>
-<div class="archflow" style="margin-top:10px"><span class="arrow">←</span><div class="node"><b>HTTP 200 / JSON</b>App → ALB → CloudFront → browser</div><span class="tag">CloudWatch · X-Ray · Secrets Manager · IAM OIDC</span></div>
-</section>
-<section class="card"><div class="sectionhead"><h2>05 / REQUEST-RESPONSE TRACE</h2><span class="tag" id="requestState">READY</span></div><div class="log" id="trace"><div>▸ Presiona “Simular request web” para recorrer el flujo.</div></div><div class="metrics" style="margin-top:10px"><div class="metric"><span>HTTP</span><strong id="http">—</strong></div><div class="metric"><span>DB LATENCY</span><strong id="latency">—</strong></div><div class="metric"><span>WAF</span><strong id="waf">—</strong></div></div></section>
-</div>
-<div class="footer">KRAKEN DEPLOY CONTROL · TEST / BUILD / SONAR / QA / PROD / DEPLOY · AWS SIMULATION ONLY; no modifica recursos AWS.</div>
+  <section class="panel">
+    <div class="section-title">01 / Flujo interactivo de la petición</div>
+
+    <div class="flow" id="flow">
+      <div class="node" data-step="0" style="--node-color:var(--blue)">
+        <span class="num">1</span><span class="icon">👤</span>
+        <strong>Usuario</strong><small>HTTPS · Navegador</small>
+      </div>
+      <div class="node" data-step="1" style="--node-color:var(--purple)">
+        <span class="num">2</span><span class="icon">🌐</span>
+        <strong>Route 53</strong><small>DNS · Dominio</small>
+      </div>
+      <div class="node" data-step="2" style="--node-color:var(--purple)">
+        <span class="num">3</span><span class="icon">☁️</span>
+        <strong>CloudFront</strong><small>CDN · Caché Edge</small>
+      </div>
+      <div class="node" data-step="3" style="--node-color:var(--red)">
+        <span class="num">4</span><span class="icon">🛡️</span>
+        <strong>AWS WAF</strong><small>Web ACL · Filtro</small>
+      </div>
+      <div class="node" data-step="4" style="--node-color:var(--purple)">
+        <span class="num">5</span><span class="icon">⚖️</span>
+        <strong>ALB</strong><small>Balanceo HTTPS</small>
+      </div>
+      <div class="node" data-step="5" style="--node-color:var(--orange)">
+        <span class="num">6</span><span class="icon">📦</span>
+        <strong>ECS Fargate</strong><small>Aplicación · Auto Scaling</small>
+      </div>
+      <div class="node" data-step="6" style="--node-color:var(--green)">
+        <span class="num">7</span><span class="icon">🧊</span>
+        <strong>Redis</strong><small>Cache opcional</small>
+      </div>
+      <div class="node" data-step="7" style="--node-color:var(--blue)">
+        <span class="num">8</span><span class="icon">🗄️</span>
+        <strong>RDS / Aurora</strong><small>Multi-AZ · Datos</small>
+      </div>
+    </div>
+
+    <div class="controls">
+      <button class="primary" onclick="runPipeline()">▶ Simular petición</button>
+      <button class="hit" onclick="simulateCache(true)">⚡ Cache Hit</button>
+      <button class="miss" onclick="simulateCache(false)">↘ Cache Miss</button>
+      <button onclick="pauseFlow()">Ⅱ Pausar</button>
+      <button onclick="resetFlow()">↻ Reiniciar</button>
+      <span class="status" id="status">Sistema listo · Simulación</span>
+    </div>
+  </section>
+
+  <section class="architecture">
+    <div class="panel">
+      <div class="section-title">02 / Arquitectura AWS — VPC de producción</div>
+      <div class="vpc">
+        <div class="vpc-heading">VPC · 10.0.0.0/16 · Dos zonas de disponibilidad</div>
+
+        <div class="azs">
+          <div class="az">
+            <h3>AZ-A · Zona de disponibilidad A</h3>
+            <div class="subnet">
+              <h4>🔓 Subred pública</h4>
+              <span class="mini-node" onclick="showDetail('ALB AZ-A','Recibe tráfico HTTPS y distribuye solicitudes hacia los targets saludables.')">⚖️ ALB</span>
+            </div>
+            <div class="subnet">
+              <h4>🔒 Subred privada · Aplicación</h4>
+              <span class="mini-node" onclick="showDetail('ECS Fargate AZ-A','Contenedores de aplicación. Escalado horizontal según demanda.')">📦 ECS App 1</span>
+              <span class="mini-node" onclick="showDetail('ECS Fargate AZ-A','Instancia simulada adicional del servicio de aplicación.')">📦 ECS App 2</span>
+            </div>
+            <div class="subnet db">
+              <h4>🔒 Subred privada · Base de datos</h4>
+              <span class="mini-node" onclick="showDetail('RDS Primary','Base de datos primaria. Acceso privado desde la aplicación.')">🗄️ RDS Primary</span>
+            </div>
+          </div>
+
+          <div class="az">
+            <h3>AZ-B · Zona de disponibilidad B</h3>
+            <div class="subnet">
+              <h4>🔓 Subred pública</h4>
+              <span class="mini-node" onclick="showDetail('ALB AZ-B','Zona alternativa para alta disponibilidad del balanceador.')">⚖️ ALB</span>
+            </div>
+            <div class="subnet">
+              <h4>🔒 Subred privada · Aplicación</h4>
+              <span class="mini-node" onclick="showDetail('ECS Fargate AZ-B','Contenedores distribuidos en una segunda zona.')">📦 ECS App 3</span>
+              <span class="mini-node" onclick="showDetail('ECS Auto Scaling','Escalado de tareas cuando aumenta la carga.')">📈 Auto Scaling</span>
+            </div>
+            <div class="subnet db">
+              <h4>🔒 Subred privada · Base de datos</h4>
+              <span class="mini-node" onclick="showDetail('RDS Standby','Instancia standby para disponibilidad Multi-AZ. No es una base pública.')">🗄️ RDS Standby</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="subnet" style="border-color:var(--cyan);margin-top:12px">
+          🔐 Security Groups · ALB → Aplicación → Base de datos · RDS sin acceso público
+        </div>
+      </div>
+    </div>
+
+    <aside>
+      <div class="side-card">
+        <h3>🟢 Observabilidad</h3>
+        <p>CloudWatch Logs · Logs de aplicación</p>
+        <p>CloudWatch Metrics · Métricas y alarmas</p>
+        <p>X-Ray · Trazabilidad distribuida</p>
+        <p>Health Checks · Estado de los targets</p>
+      </div>
+      <div class="side-card" style="border-color:var(--orange)">
+        <h3 style="color:var(--orange)">🟠 Resiliencia</h3>
+        <p>ECS Auto Scaling</p>
+        <p>RDS Multi-AZ</p>
+        <p>Backups y snapshots</p>
+        <p>Distribución entre AZ-A y AZ-B</p>
+      </div>
+      <div class="side-card" style="border-color:var(--purple)">
+        <h3 style="color:var(--purple)">🟣 Seguridad</h3>
+        <p>AWS WAF · Protección web</p>
+        <p>ACM · Certificados TLS</p>
+        <p>IAM · Mínimo privilegio</p>
+        <p>Secrets Manager · Credenciales</p>
+      </div>
+    </aside>
+  </section>
+
+  <section class="bottom-grid">
+    <div class="panel">
+      <div class="section-title">03 / Consola de eventos</div>
+      <div class="log" id="log">[READY] Simulador iniciado.<br>[INFO] No existe conexión real con AWS.</div>
+    </div>
+
+    <div class="panel">
+      <div class="section-title">04 / Detalle del componente</div>
+      <div class="detail" id="detail">
+        Selecciona un componente del flujo o de la arquitectura para ver su función.
+      </div>
+    </div>
+  </section>
 </main>
+
 <script>
-const stages=[...document.querySelectorAll('.stage')],log=document.getElementById('log');
-let running=false,failNext=false;
-function entry(msg,cls=''){let d=document.createElement('div');d.textContent='▸ '+msg; if(cls)d.className=cls;log.appendChild(d);log.scrollTop=log.scrollHeight}
-function sleep(ms){return new Promise(r=>setTimeout(r,ms))}
-function reset(){running=false;stages.forEach(s=>{s.className='stage';s.querySelector('.state').textContent='WAITING'});document.getElementById('pipelineState').textContent='IDLE';document.getElementById('buildTime').textContent='—';document.getElementById('digest').textContent='—';document.getElementById('release').textContent='v—';log.innerHTML='<div>▸ Kraken console reset. Esperando ejecución…</div>'}
-document.getElementById('reset').onclick=reset;
-document.getElementById('fault').onclick=()=>{failNext=true;entry('Failure armado: la próxima etapa de despliegue fallará.','warn')};
-document.getElementById('run').onclick=async()=>{if(running)return;reset();running=true;document.getElementById('pipelineState').textContent='RUNNING';let start=Date.now();const names=['TEST · validaciones del repositorio OK','BUILD · artefacto generado (Docker simulado)','SONAR · análisis de calidad simulado OK','QA · smoke/acceptance checks simulados OK','PROD · gate de liberación simulado aprobado','DEPLOY · ECR/ECS simulado; AWS no conectado'];for(let i=0;i<stages.length;i++){let s=stages[i];s.classList.add('active');s.querySelector('.state').textContent='RUNNING';entry(names[i]);await sleep(850);if(failNext&&i===5){failNext=false;s.classList.remove('active');s.classList.add('fail');s.querySelector('.state').textContent='FAILED';entry('DEPLOY simulado falló. No se modificó ningún recurso AWS.','bad');document.getElementById('pipelineState').textContent='FAILED / ROLLBACK';running=false;return}s.classList.remove('active');s.classList.add('ok');s.querySelector('.state').textContent='SUCCESS'}document.getElementById('pipelineState').textContent='SUCCESS';document.getElementById('buildTime').textContent=((Date.now()-start)/1000).toFixed(1)+'s';document.getElementById('digest').textContent='8a4f…c21d';document.getElementById('release').textContent='v1.8.0';entry('Pipeline simulado completo: TEST → BUILD → SONAR → QA → PROD → DEPLOY. AWS no está conectado.','good');running=false};
-document.getElementById('request').onclick=async()=>{let trace=document.getElementById('trace');trace.innerHTML='';document.getElementById('requestState').textContent='TRACING';let steps=['Browser → HTTPS GET /api/products/42','Route 53 resuelve api.example.com','CloudFront cache MISS → origin request','WAF inspecciona request · ALLOW','ALB selecciona target healthy en AZ-A','ECS app valida token y procesa request','Redis cache MISS · consulta SQL a RDS','RDS devuelve row · app serializa JSON','HTTP 200 · respuesta vuelve vía ALB/CloudFront'];for(let s of steps){let d=document.createElement('div');d.textContent='▸ '+s;trace.appendChild(d);trace.scrollTop=trace.scrollHeight;await sleep(350)}document.getElementById('requestState').textContent='COMPLETE';document.getElementById('http').textContent='200 OK';document.getElementById('latency').textContent='38 ms';document.getElementById('waf').textContent='ALLOW'};
-stages.forEach(s=>s.onclick=()=>entry('Stage inspect: '+s.dataset.name+' · simulated GitHub Actions job.'));
+const nodes = [...document.querySelectorAll(".node")];
+const statusEl = document.getElementById("status");
+const logEl = document.getElementById("log");
+const detailEl = document.getElementById("detail");
+
+let timer = null;
+let currentStep = 0;
+let paused = false;
+
+const descriptions = [
+  ["Usuario / Navegador", "El cliente inicia una petición HTTPS a la aplicación."],
+  ["Route 53", "Resuelve el nombre de dominio y dirige al endpoint de CloudFront."],
+  ["CloudFront", "CDN que entrega contenido cacheado o reenvía la petición al origen."],
+  ["AWS WAF", "Evalúa reglas de seguridad web antes de permitir que la petición continúe."],
+  ["Application Load Balancer", "Distribuye tráfico entre destinos saludables de la aplicación."],
+  ["ECS Fargate", "Ejecuta los contenedores de la aplicación sin administrar servidores."],
+  ["ElastiCache Redis", "Puede acelerar lecturas frecuentes y almacenar sesiones o datos temporales."],
+  ["RDS / Aurora", "Base de datos relacional administrada, desplegada en subredes privadas."]
+];
+
+nodes.forEach(node => {
+  node.addEventListener("click", () => {
+    const step = Number(node.dataset.step);
+    showDetail(descriptions[step][0], descriptions[step][1]);
+    highlight(step);
+  });
+});
+
+function showDetail(title, text) {
+  detailEl.innerHTML = `<strong>${title}</strong><br>${text}`;
+}
+
+function writeLog(message) {
+  const time = new Date().toLocaleTimeString();
+  logEl.innerHTML += `<br>[${time}] ${message}`;
+  logEl.scrollTop = logEl.scrollHeight;
+}
+
+function highlight(step) {
+  nodes.forEach((node, i) => node.classList.toggle("active", i === step));
+}
+
+function runPipeline() {
+  clearInterval(timer);
+  paused = false;
+  currentStep = 0;
+  logEl.innerHTML = "";
+  statusEl.textContent = "Petición en tránsito…";
+  writeLog("GET /api/products/42 · HTTPS");
+
+  timer = setInterval(() => {
+    if (paused) return;
+
+    highlight(currentStep);
+    writeLog("Paso " + (currentStep + 1) + ": " + descriptions[currentStep][0]);
+    showDetail(descriptions[currentStep][0], descriptions[currentStep][1]);
+
+    currentStep++;
+
+    if (currentStep >= nodes.length) {
+      clearInterval(timer);
+      statusEl.textContent = "200 OK · Flujo completado";
+      writeLog("Respuesta simulada: HTTP 200 OK");
+      writeLog("RDS → Aplicación → ALB → CloudFront → Usuario");
+      highlight(-1);
+    }
+  }, 850);
+}
+
+function simulateCache(hit) {
+  clearInterval(timer);
+  highlight(2);
+
+  if (hit) {
+    statusEl.textContent = "Cache Hit · Respuesta desde Edge";
+    writeLog("CACHE HIT: CloudFront entrega la respuesta cacheada.");
+    writeLog("La petición no necesita llegar a ECS ni RDS.");
+    showDetail("CloudFront Cache Hit", "Contenido disponible en Edge. Respuesta directa al usuario; el origen no se consulta en esta simulación.");
+  } else {
+    statusEl.textContent = "Cache Miss · Se consulta el origen";
+    writeLog("CACHE MISS: CloudFront reenvía al origen.");
+    writeLog("WAF → ALB → ECS → Redis/RDS → respuesta");
+    showDetail("CloudFront Cache Miss", "El contenido no está cacheado. La petición continúa hacia el origen, pasa por WAF y ALB, y la aplicación consulta sus servicios.");
+    runPipeline();
+  }
+}
+
+function pauseFlow() {
+  paused = !paused;
+  statusEl.textContent = paused ? "Simulación pausada" : "Simulación en curso";
+}
+
+function resetFlow() {
+  clearInterval(timer);
+  paused = false;
+  currentStep = 0;
+  highlight(-1);
+  statusEl.textContent = "Sistema listo · Simulación";
+  logEl.innerHTML = "[READY] Flujo reiniciado.";
+  detailEl.textContent = "Selecciona un componente para ver su función.";
+}
 </script>
 </body>
 </html>

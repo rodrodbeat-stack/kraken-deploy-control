@@ -43,8 +43,8 @@ jobs:
 
 
 
-rod:
-    name: QA - simulated
+  rod:
+    name: ROD - simulated
     needs: sonar
     runs-on: ubuntu-latest
     steps:

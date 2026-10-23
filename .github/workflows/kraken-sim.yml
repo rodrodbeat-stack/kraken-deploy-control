@@ -40,6 +40,16 @@ jobs:
     steps:
       - run: echo "Simulating QA acceptance tests"
 
+
+
+
+rod:
+    name: QA - simulated
+    needs: sonar
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "Simulating QA acceptance tests"
+
   prod:
     name: PROD - approval gate simulated
     needs: qa
